@@ -3,7 +3,8 @@
 An interactive, web-based meteorology simulation where you play with atmospheric physics and trigger immediate forecast duels between global and regional weather models. Inspired by *2D Weather Sandbox* and *Cyclone Simulator*.
 
 ## 🚀 Play Now
-> **[INSERT YOUR GITHUB PAGES URL HERE]**
+
+**[Click here to play the game!](https://github.io)**
 
 ## 🎮 How to Play
 1. **Select a Grid Point:** Click anywhere on the global dark-themed map.
