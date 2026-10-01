@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://unpkg.com" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <style>
         body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; height: 100vh; overflow: hidden; background: #1a1a1a; }
-        #map { flex: 3; height: 100%; }
+        #map { flex: 3; height: 100%; background: #151515; }
         #sidebar { flex: 1; background: #222; color: #e0e0e0; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; border-left: 2px solid #333; }
         h2 { margin-top: 0; color: #00adb5; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; }
         h3 { margin-top: 10px; color: #ff2e63; font-size: 16px; border-bottom: 1px solid #444; padding-bottom: 5px; }
@@ -34,29 +34,29 @@
     <!-- Sidebar Controls -->
     <div id="sidebar">
         <h2>Environmental Setup</h2>
-        <p id="local-selected">Click anywhere on the map to initialize grid...</p>
+        <p id="local-selected">Click anywhere on the map to target coordinates...</p>
 
         <div class="control-group">
             <label>Temperature <span id="val-temp" class="val-display">25</span>°C</label>
-            <input type="range" id="temp" min="-20" max="50" value="25" disabled>
+            <input type="range" id="temp" min="-20" max="50" value="25">
         </div>
 
         <div class="control-group">
             <label>Dew Point <span id="val-dwpt" class="val-display">15</span>°C</label>
-            <input type="range" id="dwpt" min="-25" max="30" value="15" disabled>
+            <input type="range" id="dwpt" min="-25" max="30" value="15">
         </div>
 
         <div class="control-group">
             <label>Wind Speed <span id="val-wind" class="val-display">10</span> kt</label>
-            <input type="range" id="wind" min="0" max="150" value="10" disabled>
+            <input type="range" id="wind" min="0" max="150" value="10">
         </div>
 
         <div class="control-group">
-            <label>SRH (Storm-Relative Helicity) <span id="val-srh" class="val-display">30</span> m²/s²</label>
-            <input type="range" id="srh" min="0" max="600" value="30" disabled>
+            <label>SRH (Helicity) <span id="val-srh" class="val-display">30</span> m²/s²</label>
+            <input type="range" id="srh" min="0" max="600" value="30">
         </div>
 
-        <button id="run-btn" disabled>Initialize Forecast Models</button>
+        <button id="run-btn">Initialize Forecast Models</button>
 
         <!-- Dynamic Results Screen -->
         <div class="results-box" id="results" style="display: none;">
@@ -76,15 +76,16 @@
     <!-- Leaflet Map Engine JS -->
     <script src="https://unpkg.com" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
-        // Init map looking at global scale
-        const map = L.map('map').setView([0, 0], 2);
+        // Init map focused on a wide global overview
+        const map = L.map('map').setView([10, 0], 2);
         
-        // Correct dark-themed map tiles using CartoDB
-        L.tileLayer('https://{s}://{z}/{x}/{y}{r}.png', {
-            attribution: '© OpenStreetMap contributors © CARTO'
+        // CORRIGIDO: Fornecedor de mapas global e gratuito do OpenStreetMap (Humanitarian Style)
+        L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors, Tiles style by Humanitarian OSM Team'
         }).addTo(map);
 
-        let activeLatLng = null;
+        let activeLatLng = { lat: 0, lng: 0 };
 
         // Map slider listeners
         const inputs = ['temp', 'dwpt', 'wind', 'srh'];
@@ -110,9 +111,6 @@
         map.on('click', function(e) {
             activeLatLng = e.latlng;
             document.getElementById('local-selected').innerText = `Target Grid: Lat ${activeLatLng.lat.toFixed(2)}, Lon ${activeLatLng.lng.toFixed(2)}`;
-            
-            inputs.forEach(id => sliders[id].disabled = false);
-            document.getElementById('run-btn').disabled = false;
         });
 
         // Core Physics Approximation Engine
@@ -126,53 +124,53 @@
             const lat = activeLatLng.lat;
             const lon = activeLatLng.lng;
 
-            // 1. MONAN: High sensitivity to tropical moisture/convection
+            // 1. MONAN
             let monan = "Clear skies";
-            if (lat > -25 && lat < 5 && lon > -85 && lon < -34) { // South America Tropics
+            if (lat > -25 && lat < 5 && lon > -85 && lon < -34) {
                 if (T > 32 && rhGat) monan = "⛈️ Deep Tropical Convection";
                 else if (rhGat) monan = "🌧️ Widespread Monsoon Rain";
             } else if (T > 28 && rhGat) {
                 monan = "🌦️ Scattered Warm-Core Showers";
             }
 
-            // 2. HRRR: Mesoscale convective expert, heavily relies on SRH and CAPE potential
+            // 2. HRRR
             let hrrr = "VFR Conditions";
             if (srh > 300 && T > 22 && rhGat) hrrr = "🌪️ Supercells / High Tornado Risk";
             else if (srh > 150 && V > 40) hrrr = "💨 Severe Squall Line / Derecho";
             else if (rhGat) hrrr = "⛈️ Isolated Thunderstorms";
 
-            // 3. ECMWF: Globally robust, excels at organized synoptic setups (fronts)
+            // 3. ECMWF
             let ecmwf = "Fair Weather";
             if (rhGat && V > 30 && T < 15) ecmwf = "🌧️ Organized Cold Frontal System";
             else if (T > 30 && rhGat) ecmwf = "⛈️ Evening Convective Outbreaks";
             else if (T < 0 && rhGat) ecmwf = "❄️ Steady Synoptic Snowfall";
 
-            // 4. GFS: Aggressive with quick low-pressure systems (cyclogenesis)
+            // 4. GFS
             let gfs = "Stable airmass";
             if (V > 50 && T > 26) gfs = "🌀 Rapid Tropical Cyclogenesis triggered";
             else if (rhGat && V > 25) gfs = "🌧️ Low-pressure system rainbands";
 
-            // 5. ICON: German model, very crisp boundary layer physics, good grid resolution
+            // 5. ICON
             let icon = "No precipitation";
             if (T > 33 && (T-Td) > 15) icon = "🔥 High Heatwave Risk / Dry Air";
             else if (rhGat) icon = "🌧️ Stratiform Rain / Low Overcast";
 
-            // 6. ACCESS: Aussie model, highly tuned for southern hemisphere & extreme dry heat
+            // 6. ACCESS
             let access = "Sunny / Stable";
             if (lat < 0 && T > 40 && V > 25) access = "🔥 Catastrophic Bushfire Weather Conditions";
             else if (lat < 0 && rhGat) access = "🌧️ Southern Low unstable showers";
 
-            // 7. GDPS: Canadian global model, historically handles arctic airmasses very well
+            // 7. GDPS
             let gdps = "Clear conditions";
             if (T < -5 && rhGat && V > 35) gdps = "🥶 Blizzard Warnings / Extreme Wind Chill";
             else if (T < 2 && rhGat) gdps = "🌨️ Light to Moderate Snowfall";
 
-            // 8. MSM: Japanese meso-scale, hyper-focused on orographic/coastal moisture dumps
+            // 8. MSM
             let msm = "Quiet weather";
             if (rhGat && V > 20) msm = "🌊 Heavy Orographic Coastal Deluge";
             else if (T > 25 && rhGat) msm = "⛈️ Localized Flash Flood Risk";
-            
-                        // Populate the UI text boxes
+
+            // Populate the UI text boxes
             document.getElementById('res-monan').innerText = monan;
             document.getElementById('res-hrrr').innerText = hrrr;
             document.getElementById('res-ecmwf').innerText = ecmwf;
@@ -181,13 +179,5 @@
             document.getElementById('res-access').innerText = access;
             document.getElementById('res-gdps').innerText = gdps;
             document.getElementById('res-msm').innerText = msm;
-            
-            // Hide the initial instruction text and reveal the results box
-            document.getElementById('local-selected').style.display = 'none';
             document.getElementById('results').style.display = 'block';
-        });
-    </script>
-</body>
-</html>
-
-        
+            });
