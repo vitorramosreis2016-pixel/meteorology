@@ -76,10 +76,10 @@
     <!-- Leaflet Map Engine JS -->
     <script src="https://unpkg.com" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
-        // Init map focused on a wide global overview
-        const map = L.map('map').setView([10, 0], 2);
+        // CORRIGIDO: Agora com as coordenadas centrais [0, 0] corretas
+        const map = L.map('map').setView([0, 0], 2);
         
-        // CORRIGIDO: Fornecedor de mapas global e gratuito do OpenStreetMap (Humanitarian Style)
+        // Camada estável e pública do OpenStreetMap Humanitarian Style
         L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap contributors, Tiles style by Humanitarian OSM Team'
@@ -124,51 +124,51 @@
             const lat = activeLatLng.lat;
             const lon = activeLatLng.lng;
 
-            // 1. MONAN
+            // MONAN
             let monan = "Clear skies";
             if (lat > -25 && lat < 5 && lon > -85 && lon < -34) {
                 if (T > 32 && rhGat) monan = "⛈️ Deep Tropical Convection";
-                else if (rhGat) monan = "🌧️ Widespread Monsoon Rain";
+                else if (rhGat) monan = "Widespread Monsoon Rain";
             } else if (T > 28 && rhGat) {
-                monan = "🌦️ Scattered Warm-Core Showers";
+                monan = "Scattered Warm-Core Showers";
             }
 
-            // 2. HRRR
+            // HRRR
             let hrrr = "VFR Conditions";
             if (srh > 300 && T > 22 && rhGat) hrrr = "🌪️ Supercells / High Tornado Risk";
             else if (srh > 150 && V > 40) hrrr = "💨 Severe Squall Line / Derecho";
-            else if (rhGat) hrrr = "⛈️ Isolated Thunderstorms";
+            else if (rhGat) hrrr = "Isolated Thunderstorms";
 
-            // 3. ECMWF
+            // ECMWF
             let ecmwf = "Fair Weather";
-            if (rhGat && V > 30 && T < 15) ecmwf = "🌧️ Organized Cold Frontal System";
-            else if (T > 30 && rhGat) ecmwf = "⛈️ Evening Convective Outbreaks";
+            if (rhGat && V > 30 && T < 15) ecmwf = "Organized Cold Frontal System";
+            else if (T > 30 && rhGat) ecmwf = "Evening Convective Outbreaks";
             else if (T < 0 && rhGat) ecmwf = "❄️ Steady Synoptic Snowfall";
 
-            // 4. GFS
+            // GFS
             let gfs = "Stable airmass";
             if (V > 50 && T > 26) gfs = "🌀 Rapid Tropical Cyclogenesis triggered";
-            else if (rhGat && V > 25) gfs = "🌧️ Low-pressure system rainbands";
+            else if (rhGat && V > 25) gfs = "Low-pressure system rainbands";
 
-            // 5. ICON
+            // ICON
             let icon = "No precipitation";
             if (T > 33 && (T-Td) > 15) icon = "🔥 High Heatwave Risk / Dry Air";
-            else if (rhGat) icon = "🌧️ Stratiform Rain / Low Overcast";
+            else if (rhGat) icon = "Stratiform Rain / Low Overcast";
 
-            // 6. ACCESS
+            // ACCESS
             let access = "Sunny / Stable";
             if (lat < 0 && T > 40 && V > 25) access = "🔥 Catastrophic Bushfire Weather Conditions";
-            else if (lat < 0 && rhGat) access = "🌧️ Southern Low unstable showers";
+            else if (lat < 0 && rhGat) access = "Southern Low unstable showers";
 
-            // 7. GDPS
+            // GDPS
             let gdps = "Clear conditions";
             if (T < -5 && rhGat && V > 35) gdps = "🥶 Blizzard Warnings / Extreme Wind Chill";
             else if (T < 2 && rhGat) gdps = "🌨️ Light to Moderate Snowfall";
 
-            // 8. MSM
+            // MSM
             let msm = "Quiet weather";
             if (rhGat && V > 20) msm = "🌊 Heavy Orographic Coastal Deluge";
-            else if (T > 25 && rhGat) msm = "⛈️ Localized Flash Flood Risk";
+            else if (T > 25 && rhGat) msm = "Localized Flash Flood Risk";
 
             // Populate the UI text boxes
             document.getElementById('res-monan').innerText = monan;
@@ -179,5 +179,8 @@
             document.getElementById('res-access').innerText = access;
             document.getElementById('res-gdps').innerText = gdps;
             document.getElementById('res-msm').innerText = msm;
+            
             document.getElementById('results').style.display = 'block';
-            });
+        });
+    </script>
+</body>
