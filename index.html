@@ -76,10 +76,8 @@
     <!-- Leaflet Map Engine JS -->
     <script src="https://unpkg.com" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
-        // CORRIGIDO: Agora com as coordenadas centrais [0, 0] corretas
         const map = L.map('map').setView([0, 0], 2);
         
-        // Camada estável e pública do OpenStreetMap Humanitarian Style
         L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap contributors, Tiles style by Humanitarian OSM Team'
@@ -87,15 +85,12 @@
 
         let activeLatLng = { lat: 0, lng: 0 };
 
-        // Map slider listeners
         const inputs = ['temp', 'dwpt', 'wind', 'srh'];
         const sliders = {};
         inputs.forEach(id => {
             sliders[id] = document.getElementById(id);
             sliders[id].addEventListener('input', (e) => {
                 document.getElementById(`val-${id}`).innerText = e.target.value;
-                
-                // Enforce Dew Point can't be strictly higher than Temperature
                 if(id === 'dwpt' && parseFloat(e.target.value) > parseFloat(sliders['temp'].value)) {
                     sliders['temp'].value = e.target.value;
                     document.getElementById('val-temp').innerText = e.target.value;
@@ -107,24 +102,21 @@
             });
         });
 
-        // Trigger on grid clicking
         map.on('click', function(e) {
             activeLatLng = e.latlng;
             document.getElementById('local-selected').innerText = `Target Grid: Lat ${activeLatLng.lat.toFixed(2)}, Lon ${activeLatLng.lng.toFixed(2)}`;
         });
 
-        // Core Physics Approximation Engine
         document.getElementById('run-btn').addEventListener('click', () => {
             const T = parseFloat(sliders['temp'].value);
             const Td = parseFloat(sliders['dwpt'].value);
             const V = parseFloat(sliders['wind'].value);
             const srh = parseFloat(sliders['srh'].value);
 
-            const rhGat = (T - Td) < 3; // High relative humidity proxy
+            const rhGat = (T - Td) < 3; 
             const lat = activeLatLng.lat;
             const lon = activeLatLng.lng;
 
-            // MONAN
             let monan = "Clear skies";
             if (lat > -25 && lat < 5 && lon > -85 && lon < -34) {
                 if (T > 32 && rhGat) monan = "⛈️ Deep Tropical Convection";
@@ -133,44 +125,36 @@
                 monan = "Scattered Warm-Core Showers";
             }
 
-            // HRRR
             let hrrr = "VFR Conditions";
             if (srh > 300 && T > 22 && rhGat) hrrr = "🌪️ Supercells / High Tornado Risk";
             else if (srh > 150 && V > 40) hrrr = "💨 Severe Squall Line / Derecho";
             else if (rhGat) hrrr = "Isolated Thunderstorms";
 
-            // ECMWF
             let ecmwf = "Fair Weather";
             if (rhGat && V > 30 && T < 15) ecmwf = "Organized Cold Frontal System";
             else if (T > 30 && rhGat) ecmwf = "Evening Convective Outbreaks";
             else if (T < 0 && rhGat) ecmwf = "❄️ Steady Synoptic Snowfall";
 
-            // GFS
             let gfs = "Stable airmass";
             if (V > 50 && T > 26) gfs = "🌀 Rapid Tropical Cyclogenesis triggered";
             else if (rhGat && V > 25) gfs = "Low-pressure system rainbands";
 
-            // ICON
             let icon = "No precipitation";
             if (T > 33 && (T-Td) > 15) icon = "🔥 High Heatwave Risk / Dry Air";
             else if (rhGat) icon = "Stratiform Rain / Low Overcast";
 
-            // ACCESS
             let access = "Sunny / Stable";
             if (lat < 0 && T > 40 && V > 25) access = "🔥 Catastrophic Bushfire Weather Conditions";
             else if (lat < 0 && rhGat) access = "Southern Low unstable showers";
 
-            // GDPS
             let gdps = "Clear conditions";
             if (T < -5 && rhGat && V > 35) gdps = "🥶 Blizzard Warnings / Extreme Wind Chill";
             else if (T < 2 && rhGat) gdps = "🌨️ Light to Moderate Snowfall";
 
-            // MSM
             let msm = "Quiet weather";
             if (rhGat && V > 20) msm = "🌊 Heavy Orographic Coastal Deluge";
             else if (T > 25 && rhGat) msm = "Localized Flash Flood Risk";
 
-            // Populate the UI text boxes
             document.getElementById('res-monan').innerText = monan;
             document.getElementById('res-hrrr').innerText = hrrr;
             document.getElementById('res-ecmwf').innerText = ecmwf;
@@ -184,3 +168,5 @@
         });
     </script>
 </body>
+</html>
+
